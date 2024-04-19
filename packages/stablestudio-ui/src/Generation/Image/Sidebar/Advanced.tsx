@@ -69,6 +69,51 @@ export function Advanced({
       {...props}
     >
       <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-8">
+          <Theme.Tooltip
+            delay={750}
+            placement="right"
+            content={
+              <h1>
+                Width
+              </h1>
+            }
+          >
+            <Theme.NumberInput
+              // icon={Theme.Icon.Scale}
+              label="Width"
+              placeholder="Auto"
+              fullWidth
+              number
+              min={512}
+              step={0.1}
+              max={1024}
+              value={input.width}
+              // onNumberChange={onPromptStrengthChange}
+            />
+          </Theme.Tooltip>
+          <Theme.Tooltip
+            delay={750}
+            content={
+              <h1>
+                Height
+              </h1>
+            }
+            placement="right"
+          >
+            <Theme.NumberInput
+              // icon={Theme.Icon.Steps}
+              label="Height"
+              fullWidth
+              number
+              min={512}
+              step={1}
+              max={1024}
+              value={input.height}
+              // onNumberChange={onStepsChange}
+            />
+          </Theme.Tooltip>
+        </div>
         <div className="grid grid-cols-2 gap-8">
           <Theme.Tooltip
             delay={750}
@@ -108,7 +153,7 @@ export function Advanced({
               label="Generation steps"
               fullWidth
               number
-              min={10}
+              min={2}
               step={1}
               max={150}
               value={input.steps}

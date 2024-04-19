@@ -8,7 +8,7 @@ export namespace Display {
 
   export const useStyle = ({
     scale = 1,
-    height = 512,
+    height = 1024,
     width = height,
     preserveAspectRatio,
   }: Options) =>
