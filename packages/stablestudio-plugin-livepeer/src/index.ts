@@ -2,8 +2,8 @@ import * as StableStudio from "@stability/stablestudio-plugin";
 import Dexie from "dexie";
 
 let supported_models: Array<StableStudio.StableDiffusionModel> = new Array();
-supported_models.push({ id: "1", name: "ByteDance/SDXL-Lightning" });
-supported_models.push({ id: "0", name: "SG161222/RealVisXL_V4.0_Lightning" });
+supported_models.push({ id: "0", name: "ByteDance/SDXL-Lightning" });
+supported_models.push({ id: "1", name: "SG161222/RealVisXL_V4.0_Lightning" });
 
 let supported_samplers: Array<StableStudio.StableDiffusionSampler> =
   new Array();
