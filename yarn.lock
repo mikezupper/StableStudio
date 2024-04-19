@@ -1156,6 +1156,32 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@stability/stablestudio-plugin-livepeer@workspace:packages/stablestudio-plugin-livepeer":
+  version: 0.0.0-use.local
+  resolution: "@stability/stablestudio-plugin-livepeer@workspace:packages/stablestudio-plugin-livepeer"
+  dependencies:
+    "@stability/stablestudio-plugin": "workspace:^"
+    "@typescript-eslint/eslint-plugin": ^5.33.1
+    "@typescript-eslint/parser": ^5.33.1
+    dexie: ^4.0.4
+    eslint: 8.22.0
+    eslint-config-prettier: ^8.5.0
+    eslint-plugin-import: ^2.26.0
+    eslint-plugin-markdown: ^3.0.0
+    eslint-plugin-prettier: ^4.2.1
+    eslint-plugin-react: ^7.30.1
+    eslint-plugin-react-hooks: ^4.6.0
+    nodemon: ^2.0.20
+    prettier: ^2.7.1
+    rimraf: ^3.0.2
+    ts-node: ^10.9.1
+    tsx: ^3.12.1
+    ttypescript: ^1.5.13
+    typescript: 4.8.4
+    typescript-transform-paths: ^3.4.4
+  languageName: unknown
+  linkType: soft
+
 "@stability/stablestudio-plugin-stability@workspace:^, @stability/stablestudio-plugin-stability@workspace:packages/stablestudio-plugin-stability":
   version: 0.0.0-use.local
   resolution: "@stability/stablestudio-plugin-stability@workspace:packages/stablestudio-plugin-stability"
@@ -2229,9 +2255,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.30001449, caniuse-lite@npm:^1.0.30001464":
-  version: 1.0.30001482
-  resolution: "caniuse-lite@npm:1.0.30001482"
-  checksum: a5f7681c860a29736f29350ebd81041c40b6aa7b2f94c50ed27284a0507e46dc79536dcfc05432504cfc80a0bf2070e4ad6fa704a9c0f3f32d47bed9059e98c2
+  version: 1.0.30001609
+  resolution: "caniuse-lite@npm:1.0.30001609"
+  checksum: 462f38b5c33ce544dcfa65cc3940fca7fe2d3d916ec2d9c9905ea7becf6930c540774a1278f901fe44d3b85f7d7a2f05523d27602c6ce93bb2b3806e9f3e9989
   languageName: node
   linkType: hard
 
@@ -2709,6 +2735,13 @@ __metadata:
   bin:
     detect-libc: ./bin/detect-libc.js
   checksum: daaaed925ffa7889bd91d56e9624e6c8033911bb60f3a50a74a87500680652969dbaab9526d1e200a4c94acf80fc862a22131841145a0a8482d60a99c24f4a3e
+  languageName: node
+  linkType: hard
+
+"dexie@npm:^4.0.4":
+  version: 4.0.4
+  resolution: "dexie@npm:4.0.4"
+  checksum: d0da752b676c7c0b8924e7819768db37cdd2a37ae7b1298a7f4fa0b93a8e87851c432dca4dc82b7562811647e31d2d06a27522b43372a3900deab9c57735983c
   languageName: node
   linkType: hard
 
