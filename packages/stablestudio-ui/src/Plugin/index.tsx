@@ -121,7 +121,7 @@ namespace State {
         ? StableStudioPluginExample
         : Environment.get("USE_WEBUI_PLUGIN") === "true"
         ? StableStudioPluginWebUI
-        : StableStudioPluginStability;
+        : StableStudioPluginLivepeer;
 
     return {
       rootPlugin: createRootPlugin({
