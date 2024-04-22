@@ -115,7 +115,7 @@ export const createPlugin = StableStudio.createPlugin<{
         input?.cfgScale ?? defaultStableDiffusionInput.cfgScale;
 
       //MY CODE START
-      let gatewayUrl = localStorage.getItem("livepeer-gatewayUrl") ?? undefined;
+      let gatewayUrl = localStorage.getItem("livepeer-gatewayUrl") ?? "https://dream-gateway.livepeer.cloud";
       console.log("gatewayUrl", gatewayUrl);
 
       const num_images_per_prompt =
@@ -266,14 +266,12 @@ export const createPlugin = StableStudio.createPlugin<{
     settings: {
       gatewayUrl: {
         type: "string" as const,
-        default: "https://gateway-mdw.livepeer.cloud",
+        default: "https://dream-gateway.livepeer.cloud",
         title: "Your Livepeer AI Gateway URL",
-        placeholder: "https://gateway-mdw.livepeer.cloud",
         required: true,
-
         value:
           localStorage.getItem("livepeer-gatewayUrl") ??
-          "https://gateway-mdw.livepeer.cloud",
+          "https://dream-gateway.livepeer.cloud",
       },
     },
 
