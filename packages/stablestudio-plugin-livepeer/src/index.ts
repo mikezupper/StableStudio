@@ -66,7 +66,7 @@ export const createPlugin = StableStudio.createPlugin<{
 
     manifest: {
       name: "Livepeer AI Plugin",
-      author: "Livepeer.cloud SPE",
+      author: "Livepeer.Cloud SPE",
       link: "https://www.livepeer.cloud",
       icon: `${window.location.origin}/logo.png`,
       version: "0.0.1",
@@ -148,7 +148,6 @@ export const createPlugin = StableStudio.createPlugin<{
         formData.append("model_id", `${model_name}`);
         formData.append("width", `${width}`);
         formData.append("height", `${height}`);
-        // formData.append("samples", `${num_images_per_prompt}`);
         formData.append("num_images_per_prompt", `${num_images_per_prompt}`);
         formData.append("negative_prompt", `${negative_prompt}`);
         formData.append("prompt", `${prompt}`);
@@ -266,14 +265,14 @@ export const createPlugin = StableStudio.createPlugin<{
     settings: {
       gatewayUrl: {
         type: "string" as const,
-        default: "https://gateway-mdw.livepeer.cloud",
+        default: "https://dream-gateway.livepeer.cloud",
         title: "Your Livepeer AI Gateway URL",
-        placeholder: "https://gateway-mdw.livepeer.cloud",
+        placeholder: "https://dream-gateway.livepeer.cloud",
         required: true,
 
         value:
           localStorage.getItem("livepeer-gatewayUrl") ??
-          "https://gateway-mdw.livepeer.cloud",
+          "https://dream-gateway.livepeer.cloud",
       },
     },
 
