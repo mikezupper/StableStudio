@@ -1,293 +1,349 @@
 import * as StableStudio from "@stability/stablestudio-plugin";
-import Dexie from "dexie";
+import { StableDiffusionImage } from "@stability/stablestudio-plugin";
+import {
+  base64ToBlob,
+  constructPayload,
+  fetchOptions,
+  getImageInfo,
+  setOptions,
+  testForHistoryPlugin,
+  db,
+  webuiModels,
+  webuiUpscalers,
+  IGeneratedImage,
+} from "./Utilities";
 
-let supported_models: Array<StableStudio.StableDiffusionModel> = new Array();
-supported_models.push({ id: "0", name: "ByteDance/SDXL-Lightning" });
-supported_models.push({ id: "1", name: "SG161222/RealVisXL_V4.0_Lightning" });
+const manifest = {
+  name: "Livepeer AI Plugin",
+  author: "Livepeer.Cloud SPE",
+  icon: `${window.location.origin}/logo.png`,
+  link: "https://github.com/mikezupper/StableStudio",
+  version: "0.0.0",
+  license: "MIT",
+  description:
+    "This plugin uses [`Livepeer.Cloud Gateway`](https://www.livepeer.cloud) as its back-end for inference",
+};
 
-let supported_samplers: Array<StableStudio.StableDiffusionSampler> =
-  new Array();
-supported_samplers.push({ id: "0", name: "DPM++2MSDE" });
-supported_samplers.push({ id: "1", name: "DPMSolverMultistep" });
-supported_samplers.push({ id: "2", name: "KarrasDPM" });
-supported_samplers.push({ id: "3", name: "K_EULER_ANCESTRAL" });
-supported_samplers.push({ id: "4", name: "K_EULER" });
-supported_samplers.push({ id: "5", name: "PNDM" });
-supported_samplers.push({ id: "6", name: "DDIM" });
-supported_samplers.push({ id: "7", name: "HeunDiscrete" });
+const getNumber = (strValue: string | null, defaultValue: number) => {
+  let retValue = defaultValue;
 
-export class LivepeerCloudStudioDB extends Dexie {
-  responses!: Dexie.Table<IGeneratedImage, number>;
-
-  constructor() {
-    super("LivepeerCloudStudio");
-    this.version(2).stores({
-      responses: "id,images",
-    });
+  if (strValue) {
+    retValue = Number(strValue);
   }
-}
 
-export interface IGeneratedImage {
-  id: string;
-  images: StableStudio.StableDiffusionImage[];
-}
+  return retValue;
+};
 
-var db = new LivepeerCloudStudioDB();
-
-const getStableDiffusionDefaultCount = () => 1;
-const getStableDiffusionDefaultInputFromPrompt = (prompt: string) => ({
-  prompt,
-  width: 512,
-  height: 512,
-  cfgScale: 7,
-  steps: 50,
-  negative_prompt: "",
-  model: "0",
-});
-const getStableDiffusionDefaultInput = () => ({
-  prompt,
-  width: 512,
-  height: 512,
-  cfgScale: 7,
-  steps: 50,
-  negative_prompt: "",
-  model: "0",
-  samples: 1,
-});
-
+const getStableDiffusionDefaultCount = () => 4;
 export const createPlugin = StableStudio.createPlugin<{
-  imagesGeneratedSoFar: number;
   settings: {
-    gatewayUrl: StableStudio.PluginSettingString;
+    baseUrl: StableStudio.PluginSettingString;
+    upscaler: StableStudio.PluginSettingString;
+    historyImagesCount: StableStudio.PluginSettingNumber;
   };
-}>(({ context, set, get }) => {
-  return {
-    imagesGeneratedSoFar: 0,
-
-    manifest: {
-      name: "Livepeer AI Plugin",
-      author: "Livepeer.Cloud SPE",
-      link: "https://www.livepeer.cloud",
-      icon: `${window.location.origin}/logo.png`,
-      version: "0.0.1",
-      license: "MIT",
-      description: "A Livepeer AI Powered Plugin",
-    },
-    getStableDiffusionDefaultInput,
-    getStableDiffusionSamplers: () => {
-      return supported_samplers;
-    },
-    getStableDiffusionModels: () => {
-      return supported_models;
-    },
-    getStableDiffusionExistingImages: async (options) => {
-      let responses = await db.responses.toArray();
-
-      if (responses.length == 0) return undefined;
-
-      return responses;
-    },
-    createStableDiffusionImages: async (options) => {
-      console.log("[createStableDiffusionImages] options", options);
-      const count = options?.count ?? getStableDiffusionDefaultCount();
-      const defaultStableDiffusionInput =
-        getStableDiffusionDefaultInputFromPrompt(
-          context.getStableDiffusionRandomPrompt()
-        );
-
-      const input = {
-        ...defaultStableDiffusionInput,
-        ...options?.input,
-      };
-
-      const width = input.width ?? defaultStableDiffusionInput.width;
-      const height = input.height ?? defaultStableDiffusionInput.height;
-
-      // add init and mask
-      if (input.maskImage?.blob) {
-        console.log("input has a maskImage");
-      }
-
-      const num_inference_steps =
-        input?.steps ?? defaultStableDiffusionInput.steps;
-
-      const guidance_scale =
-        input?.cfgScale ?? defaultStableDiffusionInput.cfgScale;
-
-      //MY CODE START
-      let gatewayUrl = localStorage.getItem("livepeer-gatewayUrl") ?? undefined;
-      console.log("gatewayUrl", gatewayUrl);
-
-      const num_images_per_prompt =
-        options?.count ?? getStableDiffusionDefaultCount();
-
-      let prompts = input?.prompts ? input?.prompts : [];
-      let prompt = prompts[0].text;
-      let negative_prompt: string | undefined = "";
-
-      if (prompts.length == 2) negative_prompt = prompts[1].text;
-
-      let model_name = supported_models.filter(
-        (model) => model.id == input.model
-      )[0].name;
-
-      const fetchGeneratedImage = async (img_path: string) => {
-        let new_url = `${gatewayUrl}/ai-out/${img_path}`;
-
-        const response = await fetch(new_url);
-        return await response.blob();
-      };
-
-      let id = `${crypto.randomUUID()}`;
-
-      const processImg2ImgRequest = async (
-        image_blob: Blob,
-        image_weight: number | undefined
-      ) => {
-        const formData = new FormData();
-        formData.append("model_id", `${model_name}`);
-        formData.append("width", `${width}`);
-        formData.append("height", `${height}`);
-        formData.append("num_images_per_prompt", `${num_images_per_prompt}`);
-        formData.append("negative_prompt", `${negative_prompt}`);
-        formData.append("prompt", `${prompt}`);
-        formData.append("motion_bucket_id", "50");
-        formData.append(
-          "noise_aug_strength",
-          `${image_weight ? image_weight : 0.05}`
-        );
-        formData.append("image", image_blob);
-        let output_data = await fetch(`${gatewayUrl}/image-to-image`, {
-          method: "POST",
-          mode: "cors",
-          cache: "no-cache",
-          body: formData,
-        });
-        let output_json = await output_data.json();
-        console.log("[processImg2ImgRequest] output json ", output_json);
-        const images: StableStudio.StableDiffusionImage[] = [];
-
-        for (let index = 0; index < output_json.images.length; index++) {
-          let img = output_json.images[index];
-          // let img = output_json.images[0];
-          let seed = img.seed;
-          let blob = await fetchGeneratedImage(img.url);
-          const createdAt = new Date();
-          let new_img = {
-            input: {
-              ...input,
-              seed,
-            },
-            id: `${crypto.randomUUID()}`,
-            createdAt,
-            blob,
-          };
-          images.push(new_img);
+}>(({ set, get }) => {
+  const webuiLoad = (
+    webuiHostUrl?: string
+  ): Pick<
+    StableStudio.Plugin,
+    | "createStableDiffusionImages"
+    | "getStatus"
+    | "getStableDiffusionModels"
+    | "getStableDiffusionSamplers"
+    | "getStableDiffusionDefaultCount"
+    | "getStableDiffusionDefaultInput"
+    | "getStableDiffusionExistingImages"
+  > => {
+    return {
+      createStableDiffusionImages: async (options) => {
+        if (!options) {
+          throw new Error("options is required");
         }
-        let resp: IGeneratedImage = { id, images };
-        return resp;
-      };
 
-      const processText2ImgRequest = async () => {
-        let body = {
-          prompt,
-          negative_prompt,
-          height,
-          width,
-          // samples: num_images_per_prompt,
-          num_images_per_prompt: num_images_per_prompt,
-          num_inference_steps,
-          guidance_scale,
-          scheduler: "K_EULER",
-          model_id: model_name,
+        // fetch the current webui options (model/sampler/etc)
+        const webUIOptions = await fetchOptions(webuiHostUrl);
+
+        const { model, sampler, initialImage } = options?.input ?? {};
+        options.count = options?.count ?? getStableDiffusionDefaultCount();
+
+        // quickly save the sampler and model name to local storage
+        if (sampler?.name) {
+          localStorage.setItem("webui-saved-sampler", sampler.name);
+        }
+
+        if (model) {
+          localStorage.setItem("webui-saved-model", model);
+        }
+
+        // little hacky until StableStudio is better with upscaling
+        const isUpscale =
+          options?.input?.initialImage?.weight === 1 &&
+          model === "esrgan-v1-x2plus";
+
+        // WebUI doesn't have the right model loaded, switch the model
+        if (model && model !== webUIOptions.sd_model_checkpoint && !isUpscale) {
+          localStorage.setItem("webui-saved-model", model);
+        }
+
+        // Construct payload for webui
+        const data = await constructPayload(
+          options,
+          isUpscale,
+          get().settings.upscaler.value
+        );
+
+        const fetchGeneratedImage = async (img_path: string) => {
+          let new_url = `${webuiHostUrl}${img_path}`;
+
+          const response = await fetch(new_url);
+          return await response.blob();
         };
-        console.log("body sent to gateway: ", body);
 
-        let output_data = await fetch(`${gatewayUrl}/text-to-image`, {
-          method: "POST",
-          mode: "cors",
-          cache: "no-cache",
-          body: JSON.stringify(body),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        const processImg2ImgRequest = async () => {
+          console.log("processImg2ImgRequest");
 
-        let output_json = await output_data.json();
-        console.log("output from gateway: ", output_json);
-        const images: StableStudio.StableDiffusionImage[] = [];
+          const formData = new FormData();
+          formData.append("model_id", `${data.model_id}`);
+          formData.append("width", `${data.width}`);
+          formData.append("height", `${data.height}`);
+          formData.append(
+            "num_images_per_prompt",
+            `${data.num_images_per_prompt}`
+          );
+          formData.append("negative_prompt", `${data.negative_prompt}`);
+          formData.append("prompt", `${data.prompt}`);
+          formData.append("motion_bucket_id", "50");
+          formData.append("noise_aug_strength", `${data.denoising_strength}`);
+          formData.append("image", data.init_images[0]);
+          return await fetch(`${webuiHostUrl}/image-to-image`, {
+            method: "POST",
+            mode: "cors",
+            cache: "no-cache",
+            body: formData,
+          });
+        };
 
-        for (let index = 0; index < output_json.images.length; index++) {
-          let img = output_json.images[index];
-          let seed = img.seed;
-          let blob = await fetchGeneratedImage(img.url);
-          const createdAt = new Date();
-          let new_img = {
-            input: {
-              ...input,
-              seed,
+        const processText2ImgRequest = async () => {
+          console.log("processText2ImgRequest");
+          return await fetch(`${webuiHostUrl}/text-to-image`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
             },
-            id: `${crypto.randomUUID()}`,
-            createdAt,
-            blob,
-          };
-          images.push(new_img);
-        }
-        let resp: IGeneratedImage = { id, images };
-        return resp;
-      };
+            body: JSON.stringify(data),
+          });
+        };
 
-      let existing_response: IGeneratedImage = { id, images: [] };
-      if (input.initialImage?.blob) {
-        console.log("input has a initialImage");
-        existing_response = await processImg2ImgRequest(
-          input.initialImage?.blob,
-          input.initialImage?.weight
+        const processUpscaleImgRequest = async () => {
+          console.log("processUpscaleImgRequest");
+
+          return await fetch(`${webuiHostUrl}/upscale-image`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+        };
+
+        // Send payload to webui
+        const fetch_fn = initialImage
+          ? isUpscale
+            ? processUpscaleImgRequest
+            : processImg2ImgRequest
+          : processText2ImgRequest;
+
+        const response = await fetch_fn();
+
+        const responseData = await response.json();
+
+        const images = [];
+        const createdAt = new Date();
+
+        if (isUpscale) {
+          // Upscaling only returns one image
+          let img = responseData.images[0];
+          let seed = img.seed;
+          console.log("createStableDiffusionImages upscale img ", img);
+
+          let blob = await fetchGeneratedImage(img.url);
+
+          const image = {
+            id: `${crypto.randomUUID()}`,
+            createdAt: createdAt,
+            blob: blob,
+            input: {
+              prompts: options?.input?.prompts ?? [],
+              num_images_per_prompt: options?.count,
+              num_inference_steps: options?.input?.steps ?? 0,
+              seed,
+              model_id: model ?? "",
+              width: options?.input?.width ?? 1024,
+              height: options?.input?.height ?? 1024,
+              guidance_scale: options?.input?.cfgScale ?? 7,
+              sampler: sampler ?? { id: "", name: "" },
+            },
+          };
+
+          images.push(image);
+        } else {
+          // Image generation returns an array of images
+          console.log("images returned ",responseData?.images);
+          if (responseData.images && responseData.images.length > 0) {
+            for (let i = 0; i < responseData.images.length; i++) {
+              let img = responseData.images[i];
+              let seed = img.seed;
+              console.log("createStableDiffusionImages img ", img);
+
+              let blob = await fetchGeneratedImage(img.url);
+
+              const image = {
+                id: `${crypto.randomUUID()}`,
+                createdAt,
+                blob,
+                input: {
+                  prompts: options?.input?.prompts ?? [],
+                  num_images_per_prompt: options?.count,
+                  num_inference_steps: options?.input?.steps ?? 0,
+                  seed,
+                  model_id: model ?? "",
+                  width: options?.input?.width ?? 1024,
+                  height: options?.input?.height ?? 1024,
+                  guidance_scale: options?.input?.cfgScale ?? 7,
+                  sampler: sampler ?? { id: "", name: "" },
+                },
+              };
+
+              images.push(image);
+            }
+          } else {
+            console.log("no image returned from request.....");
+          }
+        }
+        let existing_response: IGeneratedImage = {
+          id: `${crypto.randomUUID()}`,
+          images,
+        };
+        await db.responses.add(existing_response);
+        return existing_response;
+      },
+
+      getStableDiffusionModels: async () => {
+        return webuiModels;
+      },
+
+      getStatus: async () => {
+        const hasWebuiHistoryPlugin = await testForHistoryPlugin(
+          `${webuiHostUrl}`
         );
-      } else {
-        existing_response = await processText2ImgRequest();
-      }
-      await db.responses.add(existing_response);
-      return existing_response;
+        return {
+          indicator: hasWebuiHistoryPlugin ? "success" : "info",
+          text: `Ready ${
+            hasWebuiHistoryPlugin ? "with" : "without"
+          } history plugin`,
+        };
+      },
+    };
+  };
+
+  let webuiHostUrl = localStorage.getItem("webui-host-url");
+
+  if (!webuiHostUrl || webuiHostUrl === "") {
+    webuiHostUrl = "https://dream-gateway.livepeer.cloud";
+  }
+
+  return {
+    ...webuiLoad(webuiHostUrl),
+
+    getStableDiffusionDefaultCount: () => 4,
+
+    getStableDiffusionDefaultInput: () => {
+      return {
+        steps: 20,
+        sampler: {
+          id: localStorage.getItem("webui-saved-sampler") ?? "",
+          name: localStorage.getItem("webui-saved-sampler") ?? "",
+        },
+        model: localStorage.getItem("webui-saved-model") ?? "",
+      };
     },
 
-    getStatus: () => {
-      const { imagesGeneratedSoFar } = get();
-      return {
-        indicator: "success",
-        text:
-          imagesGeneratedSoFar > 0
-            ? `${imagesGeneratedSoFar} images generated`
-            : "Ready",
-      };
+    getStableDiffusionSamplers: async () => {
+      return [
+        { id: "DDIM", name: "DDIM" },
+        { id: "DDPM", name: "DDPM" },
+        { id: "K Euler", name: "K Euler" },
+        { id: "K Euler Ancestral", name: "K Euler Ancestral" },
+        { id: "K Heun", name: "K Heun" },
+        { id: "K DPM 2", name: "K DPM 2" },
+        { id: "K DPM 2 Ancestral", name: "K DPM 2 Ancestral" },
+        { id: "K LMS", name: "K LMS" },
+        { id: "K DPM++ 2S Ancestral", name: "K DPM++ 2S Ancestral" },
+        { id: "K DPM++ 2M", name: "K DPM++ 2M" },
+        { id: "K DPM++ SDE", name: "K DPM++ SDE" },
+      ];
+    },
+
+    getStableDiffusionExistingImages: async () => {
+      //TODO: need to prune/limit the number of images stored in history....
+      console.log(
+        "getStableDiffusionExistingImages limit:",
+        get().settings.historyImagesCount.value
+      );
+      let responses = await db.responses.toArray();
+      if (responses.length == 0) return undefined;
+      return responses;
     },
 
     settings: {
-      gatewayUrl: {
-        type: "string" as const,
-        default: "https://dream-gateway.livepeer.cloud",
-        title: "Your Livepeer AI Gateway URL",
+      baseUrl: {
+        type: "string",
+        title: "Livepeer.Cloud Gateway",
         placeholder: "https://dream-gateway.livepeer.cloud",
-        required: true,
+        value: localStorage.getItem("webui-host-url") ?? "",
+        description:
+          "The URL of the `Livepeer.Cloud Gateway` host, usually https://dream-gateway.livepeer.cloud",
+      },
 
-        value:
-          localStorage.getItem("livepeer-gatewayUrl") ??
-          "https://dream-gateway.livepeer.cloud",
+      upscaler: {
+        type: "string",
+        title: "Upscaler 1",
+        options: webuiUpscalers,
+        value: localStorage.getItem("upscaler1") ?? webuiUpscalers[0].value,
+        description:
+          "Select the upscaler used when downloading images at more than 1x size",
+      },
+
+      historyImagesCount: {
+        type: "number",
+        title: "History image count",
+        description: "How many images should be fetched from local history?",
+        min: 0,
+        max: 50,
+        step: 1,
+        variant: "slider",
+        value: getNumber(localStorage.getItem("historyImagesCount"), 20),
       },
     },
 
-    setSetting: (key, value) =>
-      set(({ settings }) => {
-        if (key === "gatewayUrl" && typeof value === "string") {
-          localStorage.setItem("livepeer-gatewayUrl", value);
-          //  set((plugin) => ({ ...plugin, ...functionsWhichNeedAPIKey(value) }));
-        }
+    setSetting: (key, value) => {
+      set(({ settings }) => ({
+        settings: {
+          ...settings,
+          [key]: { ...settings[key], value: value as string },
+        },
+      }));
 
-        return {
-          settings: {
-            [key]: { ...settings[key], value: value as string },
-          },
-        };
-      }),
+      if (key === "baseUrl" && typeof value === "string") {
+        localStorage.setItem("webui-host-url", value);
+        set((plugin) => ({ ...plugin, ...webuiLoad(value) }));
+      } else if (key === "upscaler" && typeof value === "string") {
+        localStorage.setItem("upscaler1", value);
+      } else if (key === "historyImagesCount" && typeof value === "number") {
+        localStorage.setItem("historyImagesCount", value.toString());
+      }
+    },
+
+    manifest,
   };
 });
