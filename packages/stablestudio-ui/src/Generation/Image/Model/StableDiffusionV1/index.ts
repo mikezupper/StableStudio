@@ -91,6 +91,8 @@ export namespace StableDiffusionV1 {
     if (model.includes("512")) return 512;
     if (model.includes("768")) return 768;
 
+    if (model.includes("XL")) return 1024;
+
     switch (model) {
       case "stable-diffusion-v1-5":
         return 512;

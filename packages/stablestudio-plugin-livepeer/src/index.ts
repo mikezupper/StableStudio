@@ -99,6 +99,16 @@ export const createPlugin = StableStudio.createPlugin<{
           return await response.blob();
         };
 
+        const postJson = async (uri: string,body: string) => {
+          return await fetch(uri, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+          });
+        };
+
         const processImg2ImgRequest = async () => {
           console.log("processImg2ImgRequest");
 
@@ -125,25 +135,12 @@ export const createPlugin = StableStudio.createPlugin<{
 
         const processText2ImgRequest = async () => {
           console.log("processText2ImgRequest");
-          return await fetch(`${webuiHostUrl}/text-to-image`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
+          return postJson(`${webuiHostUrl}/text-to-image`,data);
         };
 
         const processUpscaleImgRequest = async () => {
           console.log("processUpscaleImgRequest");
-
-          return await fetch(`${webuiHostUrl}/upscale-image`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
+          return postJson(`${webuiHostUrl}/upscale-image`,data);
         };
 
         // Send payload to webui
@@ -181,7 +178,6 @@ export const createPlugin = StableStudio.createPlugin<{
               width: options?.input?.width ?? 1024,
               height: options?.input?.height ?? 1024,
               guidance_scale: options?.input?.cfgScale ?? 7,
-              sampler: sampler ?? { id: "", name: "" },
             },
           };
 
@@ -210,7 +206,7 @@ export const createPlugin = StableStudio.createPlugin<{
                   width: options?.input?.width ?? 1024,
                   height: options?.input?.height ?? 1024,
                   guidance_scale: options?.input?.cfgScale ?? 7,
-                  sampler: sampler ?? { id: "", name: "" },
+                  // sampler: sampler ?? { id: "", name: "" },
                 },
               };
 
@@ -233,9 +229,8 @@ export const createPlugin = StableStudio.createPlugin<{
       },
 
       getStatus: async () => {
-        const hasWebuiHistoryPlugin = await testForHistoryPlugin(
-          `${webuiHostUrl}`
-        );
+        let images = await db.responses.toArray();
+        const hasWebuiHistoryPlugin = (images !== undefined)
         return {
           indicator: hasWebuiHistoryPlugin ? "success" : "info",
           text: `Ready ${
@@ -259,28 +254,30 @@ export const createPlugin = StableStudio.createPlugin<{
 
     getStableDiffusionDefaultInput: () => {
       return {
-        steps: 20,
+        width: 1024,
+        height: 1024,
+        // steps: 20,
         sampler: {
           id: localStorage.getItem("webui-saved-sampler") ?? "",
           name: localStorage.getItem("webui-saved-sampler") ?? "",
         },
-        model: localStorage.getItem("webui-saved-model") ?? "",
+        model_id: localStorage.getItem("webui-saved-model") ?? "",
       };
     },
 
     getStableDiffusionSamplers: async () => {
       return [
-        { id: "DDIM", name: "DDIM" },
-        { id: "DDPM", name: "DDPM" },
-        { id: "K Euler", name: "K Euler" },
-        { id: "K Euler Ancestral", name: "K Euler Ancestral" },
-        { id: "K Heun", name: "K Heun" },
-        { id: "K DPM 2", name: "K DPM 2" },
-        { id: "K DPM 2 Ancestral", name: "K DPM 2 Ancestral" },
-        { id: "K LMS", name: "K LMS" },
-        { id: "K DPM++ 2S Ancestral", name: "K DPM++ 2S Ancestral" },
-        { id: "K DPM++ 2M", name: "K DPM++ 2M" },
-        { id: "K DPM++ SDE", name: "K DPM++ SDE" },
+        { id: "0", name: "DDIM" },
+        { id: "1", name: "DDPM" },
+        { id: "2", name: "K Euler" },
+        { id: "3", name: "K Euler Ancestral" },
+        { id: "4", name: "K Heun" },
+        { id: "5", name: "K DPM 2" },
+        { id: "6", name: "K DPM 2 Ancestral" },
+        { id: "7", name: "K LMS" },
+        { id: "8", name: "K DPM++ 2S Ancestral" },
+        { id: "9", name: "K DPM++ 2M" },
+        { id: "10", name: "K DPM++ SDE" },
       ];
     },
 
@@ -290,9 +287,13 @@ export const createPlugin = StableStudio.createPlugin<{
         "getStableDiffusionExistingImages limit:",
         get().settings.historyImagesCount.value
       );
-      let responses = await db.responses.toArray();
-      if (responses.length == 0) return undefined;
-      return responses;
+      let images = await db.responses.toArray();
+      if (images.length == 0) return undefined;
+      let existing_response: IGeneratedImage = {
+        id: `${crypto.randomUUID()}`,
+        images,
+      };
+      return existing_response;
     },
 
     settings: {

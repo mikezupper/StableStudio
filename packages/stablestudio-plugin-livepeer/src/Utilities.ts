@@ -35,74 +35,6 @@ export async function setOptions(baseUrl: string | undefined, options: any) {
   };
 }
 
-export async function getImageInfo(
-  baseUrl: string | null,
-  base64image: any
-) {
-  const imageInfoResponse = await fetch(`${baseUrl}/sdapi/v1/png-info`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ image: base64image }),
-  });
-
-  const imageInfoJson = await imageInfoResponse.json();
-
-  const info = imageInfoJson.info.split("\n");
-
-  const data: any = {};
-
-  if (info.length === 0) {
-    return data;
-  }
-
-  data.prompt = info[0];
-
-  let detailIndex = 1;
-
-  if (info.length === 3) {
-    data.nagtivePrompt = info[1].split(":")[1].trim();
-
-    detailIndex = 2;
-  }
-
-  const details = info[detailIndex].split(",");
-
-  details.map((detail: any) => {
-    const detailInfo = detail.trim().split(":");
-
-    data[detailInfo[0]] = detailInfo[1].trim();
-  });
-
-  return data;
-}
-
-export async function testForHistoryPlugin(webuiHostUrl: string) {
-  // timeout after 1 second
-  const finished = Promise.race([
-    fetch(`${webuiHostUrl}/StableStudio/get-generated-images`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        limit: 1,
-      }),
-    }),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Request timed out")), 1000)
-    ),
-  ]);
-
-  try {
-    await finished;
-    return (finished as any).ok;
-  } catch (error) {
-    return false;
-  }
-}
-
 export async function constructPayload(
   options: {
     input?: StableDiffusionInput | undefined;
@@ -127,8 +59,8 @@ export async function constructPayload(
       Upscaling values
     */
 
-    data.upscaling_resize_w = width ?? 512;
-    data.upscaling_resize_h = height ?? 512;
+    data.upscaling_resize_w = width ?? 1024;
+    data.upscaling_resize_h = height ?? 1024;
     data.upscaler_1 = upscaler;
   } else {
     /*
@@ -138,8 +70,8 @@ export async function constructPayload(
     data.width = width ?? 1024;
     data.height = height ?? 1024;
 
-    data.sampler_name = sampler?.name ?? "";
-    data.sampler_index = sampler?.name ?? "";
+    // data.sampler_name = sampler?.name ?? "";
+    // data.sampler_index = sampler?.id ?? "";
 
     data.prompt =
       prompts?.find((p) => (p.text && (p.weight ?? 0) > 0) ?? 0 > 0)?.text ??
