@@ -120,7 +120,7 @@ export namespace Size {
         input.model
       );
 
-      let x = {
+      return {
         length: {
           min: minLength,
           max: maxLength,
@@ -146,9 +146,7 @@ export namespace Size {
           max: maxLength / minLength,
         },
       };
-      return x
     };
-
 
     export const use = (id?: ID) => {
       const { input } = Generation.Image.Input.use(id);

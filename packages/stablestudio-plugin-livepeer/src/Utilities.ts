@@ -59,16 +59,16 @@ export async function constructPayload(
       Upscaling values
     */
 
-    data.upscaling_resize_w = width ?? 1024;
-    data.upscaling_resize_h = height ?? 1024;
+    data.upscaling_resize_w = width ?? 512;
+    data.upscaling_resize_h = height ?? 512;
     data.upscaler_1 = upscaler;
   } else {
     /*
       regular image generation values
     */
 
-    data.width = width ?? 1024;
-    data.height = height ?? 1024;
+    data.width = width ?? 512;
+    data.height = height ?? 512;
 
     // data.sampler_name = sampler?.name ?? "";
     // data.sampler_index = sampler?.id ?? "";
@@ -174,5 +174,5 @@ export const webuiUpscalers = [
 
 export const webuiModels = [
   { id: "ByteDance/SDXL-Lightning", name: "ByteDance/SDXL-Lightning" },
-  { id: "SG161222/RealVisXL_V4.0_Lightning", name: "SG161222/RealVisXL_V4.0_Lightning" }
+  // { id: "SG161222/RealVisXL_V4.0_Lightning", name: "SG161222/RealVisXL_V4.0_Lightning" }
 ];
