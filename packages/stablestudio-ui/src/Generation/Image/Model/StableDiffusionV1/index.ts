@@ -53,7 +53,7 @@ export namespace StableDiffusionV1 {
           { text: "", weight: -0.75 },
         ],
 
-        model: pluginDefaultInput?.model ?? "stable-diffusion-xl-beta-v2-2-2",
+        model: pluginDefaultInput?.model ?? "",
         sampler: pluginDefaultInput?.sampler ?? { id: "0", name: "DDIM" },
         height: pluginDefaultInput?.width ?? 512,
         width: pluginDefaultInput?.height ?? 512,
@@ -90,7 +90,7 @@ export namespace StableDiffusionV1 {
   export const baseResolution = (model: string) => {
     if (model.includes("512")) return 512;
     if (model.includes("768")) return 768;
-
+    if (model.includes("XL")) return 1024;
     switch (model) {
       case "stable-diffusion-v1-5":
         return 512;
