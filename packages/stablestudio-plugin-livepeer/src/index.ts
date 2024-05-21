@@ -31,7 +31,7 @@ const getNumber = (strValue: string | null, defaultValue: number) => {
   return retValue;
 };
 
-const getStableDiffusionDefaultCount = () => 4;
+const getStableDiffusionDefaultCount = () => 1;
 export const createPlugin = StableStudio.createPlugin<{
   settings: {
     baseUrl: StableStudio.PluginSettingString;
@@ -158,7 +158,7 @@ export const createPlugin = StableStudio.createPlugin<{
           // Upscaling only returns one image
           let img = responseData.images[0];
           let seed = img.seed;
-          console.log("createStableDiffusionImages upscale img ", img);
+          // console.log("createStableDiffusionImages upscale img ", img);
 
           let blob = await fetchGeneratedImage(img.url);
 
@@ -186,7 +186,7 @@ export const createPlugin = StableStudio.createPlugin<{
             for (let i = 0; i < responseData.images.length; i++) {
               let img = responseData.images[i];
               let seed = img.seed;
-              console.log("createStableDiffusionImages img ", img);
+              // console.log("createStableDiffusionImages img ", img);
 
               let blob = await fetchGeneratedImage(img.url);
 
@@ -247,7 +247,7 @@ export const createPlugin = StableStudio.createPlugin<{
   return {
     ...webuiLoad(webuiHostUrl),
 
-    getStableDiffusionDefaultCount: () => 4,
+    getStableDiffusionDefaultCount: () => 1,
 
     getStableDiffusionDefaultInput: () => {
       return {
