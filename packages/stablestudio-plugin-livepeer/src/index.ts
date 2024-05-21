@@ -320,7 +320,7 @@ export const createPlugin = StableStudio.createPlugin<{
         title: "History image count",
         description: "How many images should be fetched from local history?",
         min: 0,
-        max: 50,
+        max: 20,
         step: 1,
         variant: "slider",
         value: getNumber(localStorage.getItem("historyImagesCount"), 20),

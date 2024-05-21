@@ -80,9 +80,9 @@ export async function constructPayload(
       prompts?.find((p) => (p.text && (p.weight ?? 0) < 0) ?? 0 < 0)?.text ??
       "";
 
-    data.num_inference_steps = steps ?? 20;
+    data.num_inference_steps = steps ?? 6;
     data.num_images_per_prompt = options?.count;
-    console.log("wetf model",model,model_id)
+    // console.log("wetf model",model,model_id)
     data.model_id = model_id;
   }
 
@@ -174,6 +174,6 @@ export const webuiUpscalers = [
 ];
 
 export const webuiModels = [
-  { id: "ByteDance/SDXL-Lightning", name: "ByteDance/SDXL-Lightning" },
-  // { id: "SG161222/RealVisXL_V4.0_Lightning", name: "SG161222/RealVisXL_V4.0_Lightning" }
+  // { id: "ByteDance/SDXL-Lightning", name: "ByteDance/SDXL-Lightning" },
+  { id: "SG161222/RealVisXL_V4.0_Lightning", name: "SG161222/RealVisXL_V4.0_Lightning" }
 ];

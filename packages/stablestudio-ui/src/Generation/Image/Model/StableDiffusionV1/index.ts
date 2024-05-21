@@ -57,7 +57,7 @@ export namespace StableDiffusionV1 {
         sampler: pluginDefaultInput?.sampler ?? { id: "0", name: "DDIM" },
         height: pluginDefaultInput?.width ?? 512,
         width: pluginDefaultInput?.height ?? 512,
-        steps: pluginDefaultInput?.steps ?? 50,
+        steps: pluginDefaultInput?.steps ?? 25,
         seed: pluginDefaultInput?.seed ?? 0,
         guidance: false,
         strength: 1,

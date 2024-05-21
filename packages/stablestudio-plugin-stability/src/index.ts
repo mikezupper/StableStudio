@@ -33,7 +33,7 @@ const getStableDiffusionDefaultInputFromPrompt = (prompt: string) => ({
   height: 512,
 
   cfgScale: 7,
-  steps: 50,
+  steps: 25,
 });
 
 export const createPlugin = StableStudio.createPlugin<{
