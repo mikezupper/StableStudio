@@ -250,11 +250,13 @@ export const createPlugin = StableStudio.createPlugin<{
     getStableDiffusionDefaultCount: () => 1,
 
     getStableDiffusionDefaultInput: () => {
-      return {
+      return  {
         width: 1024,
         height: 1024,
         model_id: localStorage.getItem("webui-saved-model") ?? webuiModels[0].name,
         model: undefined,
+        steps: 20,
+        cfgScale: 2
       };
     },
 

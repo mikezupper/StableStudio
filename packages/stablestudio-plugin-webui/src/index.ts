@@ -74,7 +74,7 @@ const getNumber = (strValue: string | null, defaultValue: number) => {
   return retValue;
 };
 
-const getStableDiffusionDefaultCount = () => 4;
+const getStableDiffusionDefaultCount = () => 2;
 export const createPlugin = StableStudio.createPlugin<{
   settings: {
     baseUrl: StableStudio.PluginSettingString;
@@ -252,7 +252,7 @@ export const createPlugin = StableStudio.createPlugin<{
   return {
     ...webuiLoad(webuiHostUrl),
 
-    getStableDiffusionDefaultCount: () => 4,
+    getStableDiffusionDefaultCount: () => 1,
 
     getStableDiffusionDefaultInput: () => {
       return {

@@ -18,7 +18,7 @@ export namespace Count {
 }
 
 export namespace Count {
-  export const preset = () => 4 as const;
+  export const preset = () => 2 as const;
 
   export const get = (): number => store.getState().count;
   export const set = (count: number) => store.getState().setCount(count);
