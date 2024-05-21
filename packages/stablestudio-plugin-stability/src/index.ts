@@ -11,7 +11,7 @@ import {
   Struct,
 } from "./Proto";
 
-const getStableDiffusionDefaultCount = () => 4;
+const getStableDiffusionDefaultCount = () => 1;
 const getStableDiffusionDefaultInputFromPrompt = (prompt: string) => ({
   prompts: [
     {
